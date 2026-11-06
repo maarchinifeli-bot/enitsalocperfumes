@@ -945,8 +945,27 @@ function bottle(fam,name,label){
    '<rect x="26" y="52" width="48" height="46" rx="7" fill="#F4EFE6" stroke="#14112B" stroke-width="2.5"/>'+
    '<text x="50" y="82" text-anchor="middle" font-family="Unbounded,Arial Black,sans-serif" font-weight="800" font-size="20" fill="#14112B">'+ini+'</text>'+
    '<path d="M24 46c0 0 0 56 0 62" stroke="#fff" stroke-opacity=".55" stroke-width="4" stroke-linecap="round" fill="none"/></svg>';
+// Mapa de fotografías cargado desde fotos.json
+var PHOTO_MAP = {};
+
+function photo(p) {
+  // Busca primero la fotografía asignada en fotos.json
+  var archivo = PHOTO_MAP[p.slug];
+
+  // Si no existe una asociación, utiliza el sistema anterior
+  if (!archivo && CFG.photos.indexOf(p.slug) > -1) {
+    archivo = p.slug + ".webp";
+  }
+
+  if (!archivo) return "";
+
+  return '<img class="ph" src="img/' +
+    encodeURIComponent(archivo) +
+    '" alt="Frasco de ' + esc(p.name) +
+    ' de ' + esc(p.brand) +
+    '" loading="lazy" decoding="async" ' +
+    'width="600" height="600" onerror="this.remove()">';
 }
-function photo(p){return CFG.photos.indexOf(p.slug)>-1?'<img class="ph" src="img/'+p.slug+'.webp" alt="Frasco de '+esc(p.name)+' de '+esc(p.brand)+'" loading="lazy" decoding="async" width="600" height="600" onerror="this.remove()">':""}
 function priceTxt(p){return p.price?'<div class="price">'+money(p.price)+'</div>':'<div class="price q">Consultá precio</div>'}
 function ls(get,key,val){try{ if(get) return localStorage.getItem(key); localStorage.setItem(key,val);}catch(e){return null}}
 
@@ -1204,7 +1223,31 @@ $("#ckNo").onclick=$("#ckNo2").onclick=function(){setCk("no")};
   els.forEach(function(e){io.observe(e)});
 })();
 
-render();updateCart();routeHash();
+
+fetch("fotos.json")
+  .then(function(response) {
+    if (!response.ok) {
+      throw new Error("No se pudo cargar fotos.json");
+    }
+    return response.json();
+  })
+  .then(function(datos) {
+    PHOTO_MAP = datos;
+
+    // Carga el catálogo con las fotografías asignadas
+    render();
+    updateCart();
+    routeHash();
+  })
+  .catch(function(error) {
+    console.error("Error al cargar las fotografías:", error);
+
+    // Si falla el JSON, mantiene el funcionamiento anterior
+    render();
+    updateCart();
+    routeHash();
+  });
+;
 </script>
 </body>
 </html>
